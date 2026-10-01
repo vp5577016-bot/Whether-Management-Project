@@ -1,0 +1,210 @@
+:root {
+    --bg-dark: #0b0f19;
+    --card-bg: #151c2c;
+    --accent-blue: #38bdf8;
+    --accent-green: #4ade80;
+    --accent-yellow: #facc15;
+    --accent-red: #f87171;
+    --border-color: #26334d;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    background-color: #030712;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Smartphone Container */
+.phone-container {
+    width: 390px;
+    height: 820px;
+    background: var(--bg-dark);
+    border-radius: 45px;
+    border: 10px solid #1e293b;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9);
+    overflow: hidden;
+    position: relative;
+}
+
+.phone-screen {
+    padding: 18px;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.phone-screen::-webkit-scrollbar {
+    width: 0px;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.badge {
+    background: #0284c7;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    vertical-align: middle;
+}
+
+.station-name {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    border-radius: 16px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.metric-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.metric-card h2 {
+    font-size: 22px;
+    margin: 4px 0;
+}
+
+.metric-card small {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.sub-text {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.text-green { color: var(--accent-green); }
+.text-blue { color: var(--accent-blue); }
+.text-yellow { color: var(--accent-yellow); }
+.text-red { color: var(--accent-red); }
+
+/* Battery Progress Bar */
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #0f172a;
+    border-radius: 10px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.progress-bar .fill {
+    height: 100%;
+    background: var(--accent-blue);
+    transition: width 0.4s ease;
+}
+
+/* Sliders */
+.control-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.slider-group label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+input[type=range] {
+    width: 100%;
+    accent-color: var(--accent-blue);
+}
+
+/* Alert Banner */
+.alert-banner {
+    background: #7f1d1d;
+    color: #fca5a5;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    border: 1px solid #ef4444;
+}
+
+.hidden { display: none; }
+
+/* Chart Container */
+.chart-card {
+    padding: 10px;
+}
+
+.chart-header {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.chart-container {
+    height: 130px;
+    width: 100%;
+}
+
+/* Buttons */
+.btn {
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-secondary {
+    background: #334155;
+    color: white;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}

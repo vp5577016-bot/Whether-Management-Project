@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoES Smart Polar Microgrid EMS - NextGen Dashboard</title>
+    <!-- FontAwesome Icons & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --panel-bg: rgba(15, 23, 42, 0.75);
+            --panel-border: rgba(56, 189, 248, 0.2);
+            --neon-blue: #00f0ff;
+            --neon-green: #00ff87;
+            --neon-red: #ff0055;
+            --neon-amber: #ffb703;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(0, 255, 135, 0.05) 0%, transparent 40%),
+                linear-gradient(to bottom, rgba(3, 7, 18, 0.9), rgba(3, 7, 18, 0.95));
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 25px 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .dashboard-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 10%; right: 10%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 18px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .brand-title h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            letter-spacing: 1.5px;
+            background: linear-gradient(90deg, #ffffff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-title p {
+            font-size: 13px;
+            color: var(--text-sub);
+            letter-spacing: 1px;
+            margin-top: 3px;
+        }
+
+        .header-badges {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 255, 135, 0.1);
+            border: 1px solid rgba(0, 255, 135, 0.3);
+            color: var(--neon-green);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--neon-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 135, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(0, 255, 135, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 135, 0); }
+        }
+
+        .station-selector {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--neon-blue);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .kpi-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 16px 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            border-color: rgba(0, 240, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .kpi-card .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .kpi-card .kpi-title {
+            font-size: 13px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .kpi-card .kpi-icon {
+            font-size: 18px;
+            color: var(--neon-blue);
+        }
+
+        .kpi-card .kpi-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 75%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .chart-box {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            height: 250px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .chart-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            color: var(--text-main);
+        }
+
+        .controls-panel {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel-heading {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+            color: var(--neon-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        .slider-val {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            font-size: 15px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-blue);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .toggle-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider-round {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider-round:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-round {
+            background-color: var(--neon-red);
+            box-shadow: 0 0 10px var(--neon-red);
+        }
+
+        input:checked + .slider-round:before {
+            transform: translateX(20px);
+        }
+
+        .btn-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: auto;
+        }
+
+        .glow-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #00f0ff, #0072ff);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .btn-ai:hover {
+            box-shadow: 0 6px 25px rgba(0, 240, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-pdf {
+            background: rgba(0, 255, 135, 0.15);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+        }
+
+        .btn-pdf:hover {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 6px 20px rgba(0, 255, 135, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .status-banner {
+            margin-top: 20px;
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 18px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+        }
+
+        .status-banner i {
+            color: var(--neon-blue);
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <header class="header">
+        <div class="brand-title">
+            <h1><i class="fa-solid fa-bolt"></i> MOES POLAR EMS 2.0</h1>
+            <p>ANTARCTICA SMART MICROGRID & DISPATCH OPTIMIZER</p>
+        </div>
+
+        <div class="header-badges">
+            <select class="station-selector" id="stationSelect">
+                <option value="maitri">📍 Maitri Station (-70.76°, 11.73°)</option>
+                <option value="bharati">📍 Bharati Station (-69.41°, 76.19°)</option>
+            </select>
+
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>AI ACTIVE</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-grid">
+        <div class="left-col">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Station Demand</span>
+                        <i class="fa-solid fa-plug kpi-icon" style="color: var(--neon-amber);"></i>
+                    </div>
+                    <div class="kpi-value" id="demandVal">42.5 <span style="font-size:16px;">kW</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 65%; background: var(--neon-amber);"></div></div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Renewable Gen</span>
+                        <i class="fa-solid fa-wind kpi-icon" style="color: var(--neon-green);"></i>
+                    </div>
+                    <div class="kpi-value" id="greenVal" style="color: var(--neon-green);">31.5 <span style="font-size:16px;">kW</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="greenProgress" style="width: 74%; background: var(--neon-green);"></div></div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Battery SoC</span>
+                        <i class="fa-solid fa-car-battery kpi-icon" style="color: var(--neon-blue);"></i>
+                    </div>
+                    <div class="kpi-value" id="socVal" style="color: var(--neon-blue);">72<span style="font-size:16px;">%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="socProgress" style="width: 72%; background: var(--neon-blue);"></div></div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Diesel Generator</span>
+                        <i class="fa-solid fa-charging-station kpi-icon" id="dieselIcon" style="color: var(--neon-green);"></i>
+                    </div>
+                    <div class="kpi-value" id="dieselVal" style="color: var(--neon-green); font-size:22px;">OFF</div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="dieselProgress" style="width: 0%; background: var(--neon-red);"></div></div>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <div class="chart-header">
+                    <span class="chart-title"><i class="fa-solid fa-chart-line"></i> 24-HOUR FORECAST & DISPATCH</span>
+                    <span style="font-size:12px; color: var(--text-sub);"><i class="fa-solid fa-arrows-rotate"></i> Realtime Sync</span>
+                </div>
+                <div style="position: relative; height: 150px; width: 100%;">
+                    <canvas id="forecastChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="panel-heading">
+                <i class="fa-solid fa-sliders"></i> SIMULATION CONTROLS
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span><i class="fa-solid fa-temperature-low"></i> Ambient Temp</span>
+                    <span class="slider-val"><span id="tempText">-25</span>°C</span>
+                </div>
+                <input type="range" id="tempSlider" min="-50" max="0" value="-25" oninput="document.getElementById('tempText').innerText=this.value">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span><i class="fa-solid fa-wind"></i> Wind Speed</span>
+                    <span class="slider-val"><span id="windText">15</span> m/s</span>
+                </div>
+                <input type="range" id="windSlider" min="0" max="40" value="15" oninput="document.getElementById('windText').innerText=this.value">
+            </div>
+
+            <div class="toggle-row">
+                <span class="toggle-label"><i class="fa-solid fa-triangle-exclamation" style="color:var(--neon-amber);"></i> Manual Generator Override</span>
+                <label class="switch">
+                    <input type="checkbox" id="overrideToggle">
+                    <span class="slider-round"></span>
+                </label>
+            </div>
+
+            <div class="btn-stack">
+                <!-- AI Optimizer Button with onclick event -->
+                <button type="button" class="glow-btn btn-ai" onclick="runAIOptimizer()">
+                    <i class="fa-solid fa-brain"></i> Run AI Optimizer
+                </button>
+                <button type="button" class="glow-btn btn-pdf" onclick="exportAuditPDF()">
+                    <i class="fa-solid fa-file-arrow-down"></i> Export Audit PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-banner">
+        <i class="fa-solid fa-circle-info"></i>
+        <span id="systemMessage">System Nominal. Microgrid operating in Maximum Renewable Self-Consumption mode.</span>
+    </div>
+</div>
+
+<!-- Complete Script for Chart & AI Optimizer -->
+<!-- Complete Script for Chart & AI Optimizer -->
+<!-- Complete Script for Live Updates via Sliders, AI Optimizer & Manual Override -->
+<script>
+    let myChart = null;
+
+    // पेज लोड होने पर चार्ट और इवेंट्स सेट करना
+    window.onload = function() {
+        const ctx = document.getElementById('forecastChart');
+        if (ctx) {
+            myChart = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [
+                        {
+                            label: 'Demand (kW)',
+                            data: [40, 42, 45, 43, 41, 44],
+                            borderColor: '#ff0055',
+                            backgroundColor: 'rgba(255, 0, 85, 0.05)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Renewable Gen (kW)',
+                            data: [25, 28, 35, 31, 29, 33],
+                            borderColor: '#00ff87',
+                            backgroundColor: 'rgba(0, 255, 135, 0.05)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f1f5f9' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // स्लाइडर्स और टॉगल स्विच पर लाइव लिसनर जोड़ना
+        const windSlider = document.getElementById('windSlider');
+        const tempSlider = document.getElementById('tempSlider');
+        const overrideToggle = document.getElementById('overrideToggle');
+
+        if (windSlider) {
+            windSlider.addEventListener('input', updateSystemLive);
+        }
+        if (tempSlider) {
+            tempSlider.addEventListener('input', updateSystemLive);
+        }
+        if (overrideToggle) {
+            overrideToggle.addEventListener('change', handleManualOverride);
+        }
+    };
+
+    // --- मुख्य लाइव अपडेट फंक्शन (स्लाइडर हिलाने पर ऊपर के कार्ड्स और ग्राफ बदलेंगे) ---
+    function updateSystemLive() {
+        const windVal = parseFloat(document.getElementById('windSlider').value) || 15;
+        const tempVal = parseFloat(document.getElementById('tempSlider').value) || -25;
+
+        // 1. हवा की गति (Wind Speed) के हिसाब से रिन्यूएबल जनरेशन कैलकुलेट करें
+        const calculatedRenewable = (windVal * 1.8).toFixed(1);
+        
+        // 2. तापमान (Temp) के हिसाब से स्टेशन डिमांड कैलकुलेट करें (ठंड जितनी ज्यादा होगी, हीटिंग डिमांड उतनी बढ़ेगी)
+        const calculatedDemand = (40 + Math.abs(tempVal * 0.25)).toFixed(1);
+
+        // 3. बैटरी SoC (चार्जिंग) कैलकुलेट करें (रिन्यूएबल और डिमांड के अंतर के आधार पर)
+        let calculatedSoC = Math.min(100, Math.max(10, Math.round(50 + (windVal * 1.2) - (Math.abs(tempVal) * 0.4))));
+
+        // --- ऊपर के कार्ड्स की वैल्यू लाइव अपडेट करें ---
+        document.getElementById('demandVal').innerHTML = `${calculatedDemand} <span style="font-size:16px;">kW</span>`;
+        document.getElementById('greenVal').innerHTML = `${calculatedRenewable} <span style="font-size:16px;">kW</span>`;
+        document.getElementById('socVal').innerHTML = `${calculatedSoC}<span style="font-size:16px;">%</span>`;
+
+        // प्रोग्रेस बार की चौड़ाई (Width) भी लाइव बदलें
+        document.querySelector('.kpi-card:nth-child(1) .progress-bar-fill').style.width = Math.min(100, (calculatedDemand / 60) * 100) + '%';
+        document.getElementById('greenProgress').style.width = Math.min(100, (calculatedRenewable / 50) * 100) + '%';
+        document.getElementById('socProgress').style.width = calculatedSoC + '%';
+
+        // --- डीजल जनरेटर का ऑटोमैटिक स्टेटस (अगर रिन्यूएबल पावर डिमांड से कम है, तो जनरेटर ऑन होगा) ---
+        const dieselVal = document.getElementById('dieselVal');
+        const dieselIcon = document.getElementById('dieselIcon');
+        const dieselProgress = document.getElementById('dieselProgress');
+        const systemMessage = document.getElementById('systemMessage');
+
+        // अगर मैनुअल ओवरराइड बंद है, तो मौसम के हिसाब से ऑटोमैटिक स्टेटस दिखाएं
+        const overrideToggle = document.getElementById('overrideToggle');
+        if (!overrideToggle.checked) {
+            if (parseFloat(calculatedRenewable) < parseFloat(calculatedDemand)) {
+                dieselVal.innerText = 'ON (AUTO)';
+                dieselVal.style.color = 'var(--neon-amber)';
+                dieselIcon.style.color = 'var(--neon-amber)';
+                dieselProgress.style.width = '50%';
+                dieselProgress.style.background = 'var(--neon-amber)';
+                systemMessage.innerText = `Low renewable generation. Auto-dispatch active to support station load.`;
+            } else {
+                dieselVal.innerText = 'OFF';
+                dieselVal.style.color = 'var(--neon-green)';
+                dieselIcon.style.color = 'var(--neon-green)';
+                dieselProgress.style.width = '0%';
+                dieselProgress.style.background = 'var(--neon-green)';
+                systemMessage.innerText = `System Nominal. Renewable generation is sufficient for station demand.`;
+            }
+        }
+
+        // --- ग्राफ की लाइनों को भी लाइव अपडेट करें ---
+        let newDemandData = [
+            parseFloat(calculatedDemand) - 3,
+            parseFloat(calculatedDemand) - 1,
+            parseFloat(calculatedDemand) + 2,
+            parseFloat(calculatedDemand),
+            parseFloat(calculatedDemand) - 2,
+            parseFloat(calculatedDemand) + 1
+        ];
+
+        let newRenewableData = [
+            parseFloat(calculatedRenewable) - 4,
+            parseFloat(calculatedRenewable) - 2,
+            parseFloat(calculatedRenewable) + 3,
+            parseFloat(calculatedRenewable),
+            parseFloat(calculatedRenewable) - 1,
+            parseFloat(calculatedRenewable) + 2
+        ];
+
+        if (myChart) {
+            myChart.data.datasets[0].data = newDemandData;
+            myChart.data.datasets[1].data = newRenewableData;
+            myChart.update();
+        }
+    }
+
+    // --- मैनुअल ओवरराइड स्विच का फंक्शन ---
+    function handleManualOverride() {
+        const isChecked = document.getElementById('overrideToggle').checked;
+        const dieselVal = document.getElementById('dieselVal');
+        const dieselIcon = document.getElementById('dieselIcon');
+        const dieselProgress = document.getElementById('dieselProgress');
+        const systemMessage = document.getElementById('systemMessage');
+
+        if (isChecked) {
+            dieselVal.innerText = 'ON (MANUAL)';
+            dieselVal.style.color = 'var(--neon-red)';
+            dieselIcon.style.color = 'var(--neon-red)';
+            dieselProgress.style.width = '85%';
+            dieselProgress.style.background = 'var(--neon-red)';
+            systemMessage.innerText = 'Warning: Manual Generator Override activated. Diesel generator locked ON at high output.';
+        } else {
+            updateSystemLive(); // वापस ऑटोमैटिक मोड पर लौट आएं
+        }
+    }
+
+    // --- AI Optimizer बटन का फंक्शन ---
+   // --- AI Optimizer बटन का फंक्शन ---
+function runAIOptimizer() {
+    document.getElementById('systemMessage').innerText = 'AI Optimizer executed successfully. Re-routing microgrid power storage for optimal efficiency';
+    
+    // Sliders ya variables se value lein
+    let windVal = 15; 
+    let tempVal = -40;
+
+    // Backend (PHP) par data bhejne ka code (Database me save karne ke liye)
+    fetch('save_data.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `wind=${windVal}&temp=${tempVal}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Database Status:', data.message);
+    })
+    .catch(error => console.error('Error:', error));
+
+    // एआई मोड में विंड स्पीड और बैटरी को ओटिमाइज किया हुआ दिखाएं
+    document.getElementById('greenVal').innerHTML = '42.5 <span style="font-size:16px;">kW</span>';
+    document.getElementById('greenProgress').style.width = '85%';
+    document.getElementById('socVal').innerHTML = '88<span style="font-size:16px;">%</span>';
+    document.getElementById('socProgress').style.width = '88%';
+
+    const dieselVal = document.getElementById('dieselVal');
+    const dieselIcon = document.getElementById('dieselIcon');
+    const dieselProgress = document.getElementById('dieselProgress');
+    dieselVal.innerText = 'ECO-MODE';
+    dieselVal.style.color = 'var(--neon-blue)';
+    dieselIcon.style.color = 'var(--neon-blue)';
+    dieselProgress.style.width = '25%';
+    dieselProgress.style.background = 'var(--neon-blue)';
+
+    // Har click par alag aur naya graph banane ke liye random variation
+    let v1 = Math.floor(Math.random() * 8);
+    let v2 = Math.floor(Math.random() * 6);
+    
+    myChart.data.datasets[0].data = [35 + v1, 40, 42 - v2, 45, 39 + v1, 43];
+    myChart.data.datasets[1].data = [30 + v2, 38, 44 - v1, 37, 41 + v2, 46];
+
+    myChart.update();
+
+        alert('AI Optimizer successfully balanced microgrid power dispatch!');
+    }
+    function exportAuditPDF() {
+        window.print();
+    }
+</script>
+ 
